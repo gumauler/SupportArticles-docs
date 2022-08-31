@@ -224,38 +224,38 @@ To query for legacy TLS entries using Azure Monitor:
 1. In the query definition area, paste the following Kusto Query Language query:
 
     ```kusto
+    //Add more columns to the "summarize" lines below to show more information
+    //example: | summarize … by AppDisplayName, AppId, UserPrincipalName, tostring(DeviceDetail.operatingSystem)
+    
     // Interactive sign-ins only
     SigninLogs
     | where AuthenticationProcessingDetails has "Legacy TLS"
-        and AuthenticationProcessingDetails has "True"
     | extend JsonAuthProcDetails = parse_json(AuthenticationProcessingDetails)
     | mv-apply JsonAuthProcDetails on (
         where JsonAuthProcDetails.key startswith "Legacy TLS"
         | project HasLegacyTls=JsonAuthProcDetails.value
     )
-    | where HasLegacyTls == true
+    | summarize LegacyTLS = countif(HasLegacyTls == true), TLS12 = countif(HasLegacyTls == False) by AppDisplayName, AppId
 
     // Non-interactive sign-ins
     AADNonInteractiveUserSignInLogs
     | where AuthenticationProcessingDetails has "Legacy TLS"
-        and AuthenticationProcessingDetails has "True"
     | extend JsonAuthProcDetails = parse_json(AuthenticationProcessingDetails)
     | mv-apply JsonAuthProcDetails on (
         where JsonAuthProcDetails.key startswith "Legacy TLS"
         | project HasLegacyTls=JsonAuthProcDetails.value
     )
-    | where HasLegacyTls == true
+    | summarize LegacyTLS = countif(HasLegacyTls == true), TLS12 = countif(HasLegacyTls == False) by AppDisplayName, AppId
 
     // Workload Identity (service principal) sign-ins
     AADServicePrincipalSignInLogs
     | where AuthenticationProcessingDetails has "Legacy TLS"
-        and AuthenticationProcessingDetails has "True"
     | extend JsonAuthProcDetails = parse_json(AuthenticationProcessingDetails)
     | mv-apply JsonAuthProcDetails on (
         where JsonAuthProcDetails.key startswith "Legacy TLS"
         | project HasLegacyTls=JsonAuthProcDetails.value
     )
-    | where HasLegacyTls == true
+    | summarize LegacyTLS = countif(HasLegacyTls == true) by ServicePrincipalName
     ```
 
 1. Select **Run** to execute the query. The log entries that match the query appear in the **Results** tab below the query definition.
